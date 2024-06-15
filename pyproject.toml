@@ -1,0 +1,21 @@
+[project]
+name = "eds-plus"
+version = "1.0.0"
+description = "easy to auto write eds"
+authors = [
+    {name = "Hotstrip", email = "idiotalex@163.com"},
+]
+dependencies = [
+    "flet>=0.22.1",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
