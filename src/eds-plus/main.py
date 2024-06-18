@@ -90,13 +90,31 @@ def get_next_month(month):
     else:
         return month + 1
 
+
 def main(page: ft.Page):
-    page.add(ft.SafeArea(ft.Text("Hello, Flet!")))
-    try: 
-        with sync_playwright() as playwright:
-            args = Args('211859', '211859zx', '代码开发')
-            run(playwright, args)
-    except Exception as e:
-        print(f"An error occurred: {e.message}")
+    def on_click(e):
+        page.snack_bar = ft.SnackBar(ft.Text(f"Hello..."))
+        page.snack_bar.open = True
+        page.update()
+
+    page.title = "自动填写 EDS"
+    page.window_min_width = 400
+    page.window_min_height = 300
+    page.add(ft.TextField(label="EDS 地址", hint_text="请输入 EDS 地址", value="http://eds.newtouch.cn:8081/eds3/"))
+    page.add(ft.TextField(label="用户名", hint_text="请输入用户名", value="211859"))
+    page.add(ft.TextField(label="密码", hint_text="请输入密码", password=True, can_reveal_password=True, value="211859zx"))
+    page.add(ft.Checkbox(label="显示执行过程", value=False))
+    page.add(
+        ft.Container(
+            content=ft.FilledButton("开始自动填写 EDS 日志", on_click=on_click),
+            alignment=ft.alignment.center
+        )
+    )
+    # try: 
+    #     with sync_playwright() as playwright:
+    #         args = Args('211859', '211859zx', '代码开发')
+    #         run(playwright, args)
+    # except Exception as e:
+    #     print(f"An error occurred: {e.message}")
 
 ft.app(main)
