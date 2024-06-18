@@ -5,12 +5,13 @@ import calendar
 
 class Args:
     # 构造函数，当创建对象时自动调用
-    def __init__(self, name, password, msg, url='http://eds.newtouch.cn:8081/eds3/'):
+    def __init__(self, msg="代码开发", url="http://eds.newtouch.cn:8081/eds3/"):
         # 定义对象的属性
-        self.name = name
-        self.password = password
+        self.name = None
+        self.password = None
         self.msg = msg
         self.url = url
+        self.headless = True
 
 def run(playwright, args: Args):
     chromium = playwright.chromium # or "firefox" or "webkit".
@@ -92,21 +93,46 @@ def get_next_month(month):
 
 
 def main(page: ft.Page):
-    def on_click(e):
+    def exec_button_click(e):
         page.snack_bar = ft.SnackBar(ft.Text(f"Hello..."))
         page.snack_bar.open = True
         page.update()
+        try: 
+            with sync_playwright() as playwright:
+                args.name = "211859"
+                args.password = "211859zx"
+                run(playwright, args)
+        except Exception as e:
+            print(f"An error occurred: {e.message}")
+        
 
+    def checkbox_headless_change(e):
+        args.headless = not checkbox_headless.value
+
+
+    args = Args()
     page.title = "自动填写 EDS"
     page.window_min_width = 400
-    page.window_min_height = 300
-    page.add(ft.TextField(label="EDS 地址", hint_text="请输入 EDS 地址", value="http://eds.newtouch.cn:8081/eds3/"))
-    page.add(ft.TextField(label="用户名", hint_text="请输入用户名", value="211859"))
-    page.add(ft.TextField(label="密码", hint_text="请输入密码", password=True, can_reveal_password=True, value="211859zx"))
-    page.add(ft.Checkbox(label="显示执行过程", value=False))
+    page.window_min_height = 400
+    page.window_max_width = 400
+    page.window_max_height = 400
+    page.update()
+
+    text_url = ft.TextField(label="EDS 地址", hint_text="请输入 EDS 地址", value="http://eds.newtouch.cn:8081/eds3/")
+    text_userName = ft.TextField(label="用户名", hint_text="请输入用户名", value="211859")
+    text_password = ft.TextField(label="密码", hint_text="请输入密码", password=True, can_reveal_password=True, value="211859zx")
+    text_msg = ft.TextField(label="EDS 日志内容", hint_text="请输入日志内容", value="代码开发")
+    checkbox_headless = ft.Checkbox(label="显示执行过程", value=False, on_change=checkbox_headless_change)
+    exec_button = ft.FilledButton("开始自动填写 EDS 日志", on_click=exec_button_click)
+
+    page.add(text_url)
+    page.add(text_userName)
+    page.add(text_password)
+    page.add(text_msg)
+    page.add(checkbox_headless)
     page.add(
         ft.Container(
-            content=ft.FilledButton("开始自动填写 EDS 日志", on_click=on_click),
+            content=exec_button,
             alignment=ft.alignment.center
         )
     )
