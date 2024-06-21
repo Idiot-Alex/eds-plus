@@ -1,88 +1,99 @@
-import flet as ft
-from playwright.sync_api import sync_playwright
+import threading
+import tkinter as tk
+from tkinter import messagebox
 from Args import Args
 from Eds import Eds
+from playwright.sync_api import sync_playwright
 
-def main(page: ft.Page):
-    def exec_button_click(e):
-        if (len(text_user.value) == 0):
-            text_user.focus()
-            snack_bar = ft.SnackBar(ft.Text(f"请输入用户名"), open=True)
-            page.overlay.append(snack_bar)
-            page.update()
-            return
-        
-        if (len(text_password.value) == 0):
-            text_password.focus()
-            snack_bar = ft.SnackBar(ft.Text(f"请输入密码"), open=True)
-            page.overlay.append(snack_bar)
-            page.update()
-            return
+def url_entry_change(e):
+  args.url = url_entry.get()
 
-        exec_button.text = "正在处理，请稍后"
-        exec_button.disabled = True
-        page.update()
+def user_entry_change(e):
+  args.user = user_entry.get()
 
-        eds = Eds()
-        try: 
-            with sync_playwright() as playwright:
-                eds.run(playwright, args)
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            
-        if (eds.code == 200):
-            snack_bar = ft.SnackBar(ft.Text(f"自动填写日志完成: {eds.msg}"), open=True)
-            page.overlay.append(snack_bar)
-            page.update()
-        else:
-            snack_bar = ft.SnackBar(ft.Text(f"自动填写日志失败: {eds.msg}"), open=True)
-            page.overlay.append(snack_bar)
-            page.update()
+def pwd_entry_change(e):
+  args.password = pwd_entry.get()
 
-        exec_button.disabled = False
-        exec_button.text = "开始自动填写 EDS 日志"
-        page.update()
-        
-    def text_url_change(e):
-        args.url = text_url.value
+def msg_entry_change(e):
+  args.msg = msg_entry.get("1.0", tk.END)
 
-    def text_user_change(e):
-        args.user = text_user.value
+def checkbox_headless_change():
+  args.headless = False if headless_var.get() == 1 else True
 
-    def text_password_change(e):
-        args.password = text_password.value
+def wright_eds_worker(eds, args):
+  try:
+    with sync_playwright() as playwright:
+      eds.run(playwright, args)
+  except Exception as e:
+    print(f"An error occurred: {str(e)}")
 
-    def text_msg_change(e):
-        args.msg = text_msg.value
+def exec_button_click():
+  if (len(user_entry.get()) == 0):
+    user_entry.focus_set()
+    messagebox.showerror("错误", f"请输入用户名")
+    return
 
-    def checkbox_headless_change(e):
-        args.headless = not checkbox_headless.value
+  if (len(pwd_entry.get()) == 0):
+    pwd_entry.focus_set()
+    messagebox.showerror("错误", f"请输入密码")
+    return
 
-    args = Args()
-    page.title = "自动填写 EDS"
-    page.window.min_width = 400
-    page.window.min_height = 400
-    page.window.width = 400
-    page.window.height = 400
-    page.update()
+  exec_button.config(text="正在处理，请稍后", state=tk.DISABLED)
+  root.update()
 
-    text_url = ft.TextField(label="EDS 地址", hint_text="请输入 EDS 地址", value="http://eds.newtouch.cn:8081/eds3/", on_change=text_url_change)
-    text_user = ft.TextField(label="用户名", hint_text="请输入用户名", value="", on_change=text_user_change)
-    text_password = ft.TextField(label="密码", hint_text="请输入密码", password=True, can_reveal_password=True, value="", on_change=text_password_change)
-    text_msg = ft.TextField(label="EDS 日志内容", hint_text="请输入日志内容", value="代码开发", on_change=text_msg_change)
-    checkbox_headless = ft.Checkbox(label="显示执行过程", value=False, on_change=checkbox_headless_change)
-    exec_button = ft.FilledButton("开始自动填写 EDS 日志", disabled=False, on_click=exec_button_click)
 
-    page.add(text_url)
-    page.add(text_user)
-    page.add(text_password)
-    page.add(text_msg)
-    page.add(checkbox_headless)
-    page.add(
-        ft.Container(
-            content=exec_button,
-            alignment=ft.alignment.center
-        )
-    )
+  eds = Eds()
+  thread = threading.Thread(target=wright_eds_worker, args=(eds, args), name="thread-wright-eds")
+  thread.start()
+  thread.join()
 
-ft.app(main)
+  if (eds.code == 200):
+    print(f"自动填写日志完成: {eds.msg}")
+    messagebox.showinfo("信息", f"自动填写日志完成: {eds.msg}")
+  else:
+    print(f"自动填写日志失败: {eds.msg}")
+    messagebox.showwarning("警告", f"自动填写日志失败: {eds.msg}")
+
+  exec_button.config(text="开始自动填写 EDS 日志", state=tk.NORMAL)
+
+args = Args()
+root = tk.Tk()
+root.geometry("400x300")
+root.title("自动填写 EDS")
+
+frame = tk.Frame(root)
+frame.pack()
+
+url_label = tk.Label(frame, text="请输入 EDS 地址：", anchor=tk.E)
+url_label.grid(row=0, column=0, sticky=tk.NSEW)
+url_entry = tk.Entry(frame, width=30, textvariable=tk.StringVar(value=args.url))
+url_entry.bind("<KeyRelease>", url_entry_change)
+url_entry.grid(row=0, column=1)
+
+user_label = tk.Label(frame, text="请输入用户名：", anchor=tk.E)
+user_label.grid(row=1, column=0, sticky=tk.NSEW)
+user_entry = tk.Entry(frame, width=30)
+user_entry.bind("<KeyRelease>", user_entry_change)
+user_entry.grid(row=1, column=1)
+
+pwd_label = tk.Label(frame, text="请输入密码：", anchor=tk.E)
+pwd_label.grid(row=2, column=0, sticky=tk.NSEW)
+pwd_entry = tk.Entry(frame, width=30, show="*")
+pwd_entry.bind("<KeyRelease>", pwd_entry_change)
+pwd_entry.grid(row=2, column=1)
+
+msg_label = tk.Label(frame, text="请输入 EDS 内容：", anchor=tk.E)
+msg_label.grid(row=3, column=0, sticky=tk.NSEW)
+msg_entry = tk.Text(frame, width=30, height=3)
+msg_entry.insert(tk.END, args.msg)
+msg_entry.bind("<KeyRelease>", msg_entry_change)
+msg_entry.grid(row=3, column=1)
+
+headless_var = tk.IntVar()
+checkbox_headless = tk.Checkbutton(frame, text="显示执行过程", variable=headless_var, onvalue=1, offvalue=0, command=checkbox_headless_change)
+checkbox_headless.grid(row=4, column=0, columnspan=2)
+
+exec_button = tk.Button(frame, text="开始自动填写 EDS 日志", command=exec_button_click)
+exec_button.grid(row=5, column=0, columnspan=2)
+
+root.mainloop()
