@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import messagebox
 from Args import Args
 from Eds import Eds
-from playwright.sync_api import sync_playwright
 from PIL import Image, ImageTk
+from playwright.sync_api import sync_playwright
 
 def app():
   def url_entry_change(e):
