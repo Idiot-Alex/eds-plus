@@ -5,3 +5,5 @@
 
 ```
 pyinstaller -n eds-plus -F .\src\eds-plus\main.py
+
+pyinstaller --clean --hidden-import=Pillow -n eds-plus -F .\src\eds-plus\main.py
